@@ -9,12 +9,15 @@ import UIKit
 
 protocol RMCharacterListViewDelegate: AnyObject {
     func rmCharacterListView(_ characterListView: RMCharacterListView,
-                             didSelectCharacter character: Character)
+                             didSelectCharacter character: RMCharacter)
 }
 
 /// View that handles showing list of characters, loader, etc
 class RMCharacterListView: UIView {
-    private let viewModel = CharacterListViewViewModel()
+    
+    public weak var delegate: RMCharacterListViewDelegate?
+    
+    private let viewModel = RMCharacterListViewViewModel()
     
     private let spinner: UIActivityIndicatorView = {
         let spinner = UIActivityIndicatorView(style: .large)
@@ -32,6 +35,9 @@ class RMCharacterListView: UIView {
         collectionView.alpha = 0
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.register(RMCharacterCollectionViewCell.self, forCellWithReuseIdentifier: RMCharacterCollectionViewCell.cellIdentifier)
+        collectionView.register(RMFooterLoadingCollectionReusableView.self,
+                                forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
+                                withReuseIdentifier: RMFooterLoadingCollectionReusableView.identifier)
         return collectionView
     }()
     
@@ -74,8 +80,9 @@ class RMCharacterListView: UIView {
 }
 
 extension RMCharacterListView: RMCharacterListViewViewModelDelegate {
+    
     func didSelectCharacter(_ character: RMCharacter) {
-        <#code#>
+        delegate?.rmCharacterListView(self, didSelectCharacter: character)
     }
     
     func didLoadInitialCharacters() {
@@ -84,6 +91,12 @@ extension RMCharacterListView: RMCharacterListViewViewModelDelegate {
         collectionView.reloadData()
         UIView.animate(withDuration: 0.4) {
             self.collectionView.alpha = 1 
+        }
+    }
+    
+    func didLoadMoreCharacters(with newIndexPaths: [IndexPath]) {
+        collectionView.performBatchUpdates {
+            self.collectionView.insertItems(at: newIndexPaths)
         }
     }
 }
